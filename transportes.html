@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Transportes Blockchain</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      font-family: 'Segoe UI', sans-serif;
+    }
+
+    body {
+      margin: 0;
+      padding: 20px;
+      background: linear-gradient(to right, #1e3c72, #2a5298);
+      color: white;
+    }
+
+    h1 {
+      text-align: center;
+      margin-bottom: 30px;
+    }
+
+    .buttons {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    button {
+      margin: 0 10px;
+      padding: 10px 20px;
+      border: none;
+      border-radius: 10px;
+      background-color: #00cec9;
+      color: white;
+      font-size: 16px;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background-color: #00b894;
+    }
+
+    .bloque {
+      background-color: rgba(255, 255, 255, 0.1);
+      border: 1px solid #ccc;
+      border-radius: 15px;
+      padding: 15px;
+      margin-bottom: 20px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+    }
+
+    .clave {
+      font-size: 14px;
+      color: #ffeaa7;
+      word-break: break-word;
+    }
+
+    @media (max-width: 600px) {
+      button {
+        width: 100%;
+        margin: 10px 0;
+      }
+    }
+  </style>
+</head>
+<body>
+  <h1>Registro de Transportes - Blockchain</h1>
+  <div class="buttons">
+  <button onclick="verTransportes()">Ver transportes</button>
+  <button onclick="agregarTransporte()">Agregar transporte</button>
+  <button onclick="verCodigos()">Ver códigos actuales</button>
+</div>
+
+  <div id="transportes"></div>
+
+  <script>
+    if (!sessionStorage.getItem("loggedIn")) {
+      window.location.href = "index.html";
+    }
+
+    let transportes = [];
+
+    function generarHash(datos) {
+      const json = JSON.stringify(datos);
+      let hash = 0;
+      for (let i = 0; i < json.length; i++) {
+        const char = json.charCodeAt(i);
+        hash = (hash << 5) - hash + char;
+        hash |= 0;
+      }
+      return 'h' + Math.abs(hash).toString(16);
+    }
+
+    function crearBloque(transporte, claveAnterior) {
+      const bloque = {
+        ...transporte,
+        claveOrigen: claveAnterior || "GENESIS",
+      };
+      bloque.claveSalida = generarHash(bloque);
+      return bloque;
+    }
+
+    function guardarEnLocalStorage() {
+      localStorage.setItem("transportesBlockchain", JSON.stringify(transportes));
+    }
+
+    function cargarDeLocalStorage() {
+      const data = localStorage.getItem("transportesBlockchain");
+      if (data) {
+        transportes = JSON.parse(data);
+      } else {
+        // Crear datos iniciales
+        const bloque1 = crearBloque({ tipoCarga: "Frutas", tiempoLlegada: "10:00", destinatario: "D1", remitente: "R1" }, null);
+        const bloque2 = crearBloque({ tipoCarga: "Electrodomésticos", tiempoLlegada: "12:00", destinatario: "D2", remitente: "R2" }, bloque1.claveSalida);
+        transportes = [bloque1, bloque2];
+        guardarEnLocalStorage();
+      }
+    }
+
+    function verTransportes() {
+      const contenedor = document.getElementById("transportes");
+      contenedor.innerHTML = "";
+
+      transportes.forEach((bloque, index) => {
+        const div = document.createElement("div");
+        div.className = "bloque";
+        div.innerHTML = `
+          <p><strong>Bloque #${index + 1}</strong></p>
+          <p><strong>Tipo de carga:</strong> ${bloque.tipoCarga}</p>
+          <p><strong>Tiempo de llegada:</strong> ${bloque.tiempoLlegada}</p>
+          <p><strong>Destinatario:</strong> ${bloque.destinatario}</p>
+          <p><strong>Remitente:</strong> ${bloque.remitente}</p>
+          <p class="clave"><strong>Clave de origen:</strong> ${bloque.claveOrigen}</p>
+          <p class="clave"><strong>Clave de salida:</strong> ${bloque.claveSalida}</p>
+        `;
+        contenedor.appendChild(div);
+      });
+    }
+
+    function agregarTransporte() {
+      const codigoActual = localStorage.getItem("codigoActual");
+      const ingreso = prompt("Ingrese el código actual para autorizar:");
+
+      if (ingreso !== codigoActual) {
+        alert("Código incorrecto");
+        return;
+      }
+
+      const tipoCarga = prompt("Tipo de carga:");
+      const tiempoLlegada = prompt("Hora de llegada:");
+      const destinatario = prompt("Destinatario:");
+      const remitente = prompt("Remitente:");
+
+      const claveAnterior = transportes.length > 0 ? transportes[transportes.length - 1].claveSalida : null;
+
+      const nuevoBloque = crearBloque({ tipoCarga, tiempoLlegada, destinatario, remitente }, claveAnterior);
+
+      transportes.push(nuevoBloque);
+      guardarEnLocalStorage();
+      verTransportes();
+    }
+
+    // Inicialización
+    cargarDeLocalStorage();
+    verTransportes();
+
+const claveAdmin = "admin1234";
+
+
+    function verCodigos() {
+  const clave = prompt("Ingrese la clave de administrador para acceder a los códigos:");
+  if (clave === claveAdmin) {
+    window.open("codigos.html", "_blank");
+  } else {
+    alert("Acceso denegado. Clave incorrecta.");
+  }
+}
+
+  </script>
+</body>
+</html>
